@@ -10,7 +10,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from llm import call_llm
 from utils.parser import parse_json_response
 
 
@@ -548,6 +547,10 @@ def extract_financial_metrics(
             "record_count": 0,
             "total_available_metrics": 0,
         }
+
+    # Import lazily so deterministic consumers of the normalized financial
+    # schema do not initialize the external LLM client.
+    from llm import call_llm
 
     context = format_financial_context(
         relevant_chunks=relevant_chunks,
