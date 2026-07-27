@@ -9,6 +9,10 @@ from __future__ import annotations
 
 from typing import Any
 
+from agents.financial import extract_financial_metrics
+from agents.financial_reasoning import (
+    analyze_financial_metrics,
+)
 from agents.generator import generate_grounded_answer
 from agents.grader import grade_chunks
 from agents.metadata import extract_retrieval_metadata
@@ -150,6 +154,12 @@ def retrieve_node(
     """
 
     question = state["question"]
+    financial_analysis_requested = bool(
+        state.get(
+            "financial_analysis_requested",
+            False,
+        )
+    )
 
     router_search_query = (
         state.get("search_query")
@@ -201,6 +211,13 @@ def retrieve_node(
             "retrieval_filters": retrieval_filters,
             "retrieved_chunks": [],
             "graded_chunks": [],
+            "financial_metrics": {},
+            "financial_analysis": {},
+            "financial_analysis_status": (
+                "insufficient_data"
+                if financial_analysis_requested
+                else "not_requested"
+            ),
             "evaluation": {
                 "grounded": False,
                 "reason": "No document chunks were retrieved.",
@@ -253,6 +270,13 @@ def retrieve_node(
             "retrieval_filters": retrieval_filters,
             "retrieved_chunks": [],
             "graded_chunks": graded_chunks,
+            "financial_metrics": {},
+            "financial_analysis": {},
+            "financial_analysis_status": (
+                "insufficient_data"
+                if financial_analysis_requested
+                else "not_requested"
+            ),
             "evaluation": {
                 "grounded": False,
                 "reason": (
@@ -282,12 +306,72 @@ def retrieve_node(
         }
 
     # ---------------------------------------------------------------
-    # Step 4: Grounded generation
+    # Step 4: Financial extraction and deterministic reasoning
+    # ---------------------------------------------------------------
+
+    financial_metrics: dict[str, Any] = {}
+    financial_analysis: dict[str, Any] = {}
+    financial_analysis_status = "not_requested"
+
+    if financial_analysis_requested:
+        try:
+            financial_metrics = extract_financial_metrics(
+                question=question,
+                relevant_chunks=relevant_chunks,
+            )
+
+            financial_analysis = analyze_financial_metrics(
+                financial_result=financial_metrics,
+            )
+
+            has_calculations = any(
+                company.get("calculated_ratios")
+                for company in financial_analysis.get(
+                    "companies",
+                    [],
+                )
+                if isinstance(company, dict)
+            )
+
+            financial_analysis_status = (
+                "success"
+                if has_calculations
+                else "insufficient_data"
+            )
+
+        except Exception as error:
+            financial_analysis_status = "failed"
+            financial_analysis = {
+                "companies": [],
+                "analysis_count": 0,
+                "warnings": [
+                    (
+                        "Financial analysis could not be completed; "
+                        "grounded generation continued."
+                    )
+                ],
+            }
+
+            print(
+                "FINANCIAL ANALYSIS FAILED: "
+                f"{type(error).__name__}: {error}"
+            )
+
+    # ---------------------------------------------------------------
+    # Step 5: Grounded generation
     # ---------------------------------------------------------------
 
     generation_result = generate_grounded_answer(
         question=question,
         relevant_chunks=relevant_chunks,
+        financial_analysis=(
+            financial_analysis
+            if (
+                financial_analysis
+                and financial_analysis_status != "failed"
+            )
+            else None
+        ),
     )
 
     answer = generation_result["answer"]
@@ -305,6 +389,11 @@ def retrieve_node(
 
         # The complete grading record remains available in state.
         "graded_chunks": graded_chunks,
+        "financial_metrics": financial_metrics,
+        "financial_analysis": financial_analysis,
+        "financial_analysis_status": (
+            financial_analysis_status
+        ),
 
         "evaluation": {
             "grounded": grounded,
@@ -315,6 +404,9 @@ def retrieve_node(
             ),
             "relevant_count": len(
                 relevant_chunks
+            ),
+            "financial_analysis_status": (
+                financial_analysis_status
             ),
         },
 
@@ -331,6 +423,9 @@ def retrieve_node(
             ),
             "status": "success",
             "grounded": grounded,
+            "financial_analysis_status": (
+                financial_analysis_status
+            ),
             "answer": answer,
         },
 

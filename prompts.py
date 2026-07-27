@@ -379,6 +379,7 @@ Retrieved context:
 {context}
 ---
 
+{financial_analysis_context}
 Grounding rules:
 
 - Use only facts explicitly supported by the retrieved context.
@@ -502,7 +503,10 @@ def render_direct() -> str:
     )
 
 
-def render_generation(context: str) -> str:
+def render_generation(
+    context: str,
+    financial_analysis_context: str = "",
+) -> str:
     """
     Return the generation prompt containing retrieved context.
     """
@@ -511,6 +515,9 @@ def render_generation(context: str) -> str:
         domain=DOMAIN,
         domain_desc=DOMAIN_DESC,
         context=context,
+        financial_analysis_context=(
+            financial_analysis_context
+        ),
     )
 
 

@@ -4,6 +4,7 @@ Grounded answer generation agent for SEC filing analysis.
 
 from __future__ import annotations
 
+import json
 from typing import Any
 
 from llm import call_llm
@@ -94,6 +95,7 @@ def format_retrieved_context(
 def generate_grounded_answer(
     question: str,
     relevant_chunks: list[dict[str, Any]],
+    financial_analysis: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """
     Generate an answer grounded only in the supplied SEC filing chunks.
@@ -103,8 +105,32 @@ def generate_grounded_answer(
         retrieved_chunks=relevant_chunks,
     )
 
+    financial_analysis_context = ""
+
+    if financial_analysis:
+        financial_analysis_context = (
+            "Deterministic financial analysis:\n"
+            "---\n"
+            f"{json.dumps(financial_analysis, indent=2)}\n"
+            "---\n"
+            "Financial analysis rules:\n"
+            "- Treat values marked `status: calculated` as calculated "
+            "values, not directly reported values.\n"
+            "- Do not recalculate, modify, or extend the deterministic "
+            "analysis.\n"
+            "- Keep calculated values separate from qualitative "
+            "interpretation.\n"
+            "- Use the supporting metric records and their document "
+            "references when citing calculated values.\n"
+        )
+
     raw_response = call_llm(
-        system_prompt=render_generation(context),
+        system_prompt=render_generation(
+            context,
+            financial_analysis_context=(
+                financial_analysis_context
+            ),
+        ),
         user_prompt=question,
     )
 

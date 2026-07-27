@@ -66,6 +66,20 @@ class ChatState(TypedDict, total=False):
     # Retrieval and answer-quality evaluation
     evaluation: dict[str, Any]
 
+    # Normalized metrics extracted from relevant filing excerpts
+    financial_metrics: dict[str, Any]
+
+    # Deterministic calculations and interpretations of the metrics
+    financial_analysis: dict[str, Any]
+
+    # Whether analysis ran, lacked data, failed, or was not requested
+    financial_analysis_status: Literal[
+        "not_requested",
+        "success",
+        "insufficient_data",
+        "failed",
+    ]
+
     # ---------------------------------------------------------------
     # OUTPUT
     # ---------------------------------------------------------------
