@@ -36,6 +36,9 @@ class ChatState(TypedDict, total=False):
     # Optimized semantic-search query
     search_query: str
 
+    # Whether the router identified a request for metric calculations
+    financial_analysis_requested: bool
+
     # ---------------------------------------------------------------
     # METADATA EXTRACTION
     # ---------------------------------------------------------------

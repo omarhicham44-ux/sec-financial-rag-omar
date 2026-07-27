@@ -50,6 +50,9 @@ def router_node(
     route = router_result["route"]
     route_reason = router_result["route_reason"]
     search_query = router_result["search_query"]
+    financial_analysis_requested = router_result[
+        "financial_analysis_requested"
+    ]
 
     print(
         f"AI ROUTER: {route} - {route_reason}"
@@ -59,6 +62,9 @@ def router_node(
         "route": route,
         "route_reason": route_reason,
         "search_query": search_query,
+        "financial_analysis_requested": (
+            financial_analysis_requested
+        ),
     }
 
 

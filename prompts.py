@@ -59,35 +59,47 @@ Return only one valid JSON object, without markdown fences:
 {{
   "route": "direct | retrieve | decline",
   "route_reason": "one short sentence explaining the classification",
-  "search_query": "an optimized document-search query when route is retrieve; otherwise an empty string"
+  "search_query": "an optimized document-search query when route is retrieve; otherwise an empty string",
+  "financial_analysis_requested": true | false
 }}
 
 Rules:
 
 - route must be exactly one of: direct, retrieve, decline.
 - search_query must be non-empty only for retrieve.
+- financial_analysis_requested must be true only when the user asks to
+  calculate, compare, or interpret company financial metrics, margins,
+  cash-flow quality, balance-sheet pressure, or multi-year financial trends.
+- Use false for qualitative filing questions, general definitions, greetings,
+  declined requests, and financial questions that do not request analysis of
+  company metrics from the indexed filings.
 - Preserve company names, years, filing sections, and important financial terms
   from the user's question in the search query.
 - Do not answer the user's question.
-- Do not include keys other than route, route_reason, and search_query.
+- Do not include keys other than route, route_reason, search_query, and
+  financial_analysis_requested.
 
 Examples:
 
 User: Hello, what can you help me with?
 Output:
-{{"route":"direct","route_reason":"This is a capability question that does not require filing retrieval.","search_query":""}}
+{{"route":"direct","route_reason":"This is a capability question that does not require filing retrieval.","search_query":"","financial_analysis_requested":false}}
 
 User: What is a Form 10-K?
 Output:
-{{"route":"direct","route_reason":"This is a general definition that does not require a specific indexed filing.","search_query":""}}
+{{"route":"direct","route_reason":"This is a general definition that does not require a specific indexed filing.","search_query":"","financial_analysis_requested":false}}
 
 User: What risks did MGT Capital report in its 2020 annual report?
 Output:
-{{"route":"retrieve","route_reason":"The question requires company-specific risk information from an indexed 10-K filing.","search_query":"MGT Capital Investments 2020 Form 10-K Item 1A risk factors"}}
+{{"route":"retrieve","route_reason":"The question requires company-specific risk information from an indexed 10-K filing.","search_query":"MGT Capital Investments 2020 Form 10-K Item 1A risk factors","financial_analysis_requested":false}}
+
+User: How did Salesforce's revenue growth and operating margin change from 2020 to 2021?
+Output:
+{{"route":"retrieve","route_reason":"The question requests multi-year analysis of company financial metrics from indexed filings.","search_query":"Salesforce 2020 2021 revenue operating income financial statements","financial_analysis_requested":true}}
 
 User: What stock should I buy?
 Output:
-{{"route":"decline","route_reason":"The request asks for an investment recommendation rather than filing analysis.","search_query":""}}
+{{"route":"decline","route_reason":"The request asks for an investment recommendation rather than filing analysis.","search_query":"","financial_analysis_requested":false}}
 
 The actual question will be provided separately as the user message.
 """

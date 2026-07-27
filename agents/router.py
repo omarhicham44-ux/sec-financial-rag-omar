@@ -51,6 +51,13 @@ def route_question(
         "",
     )
 
+    financial_analysis_requested = (
+        router_result.get(
+            "financial_analysis_requested"
+        )
+        is True
+    )
+
     if route not in ALLOWED_ROUTES:
         raise ValueError(
             f"Invalid route returned by the model: {route}"
@@ -72,9 +79,13 @@ def route_question(
 
     else:
         search_query = ""
+        financial_analysis_requested = False
 
     return {
         "route": route,
         "route_reason": route_reason,
         "search_query": search_query,
+        "financial_analysis_requested": (
+            financial_analysis_requested
+        ),
     }
