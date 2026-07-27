@@ -1,0 +1,49 @@
+X200 INDUSTRIAL PUMP MAINTENANCE MANUAL
+
+1. GENERAL INFORMATION
+
+The X200 industrial pump is designed for continuous fluid-transfer operations.
+Only trained technicians should perform installation, inspection, or maintenance.
+
+Disconnect electrical power and release system pressure before beginning any
+maintenance procedure.
+
+2. PUMP HOUSING
+
+The X200 pump housing contains the impeller, shaft assembly, and mechanical seal.
+
+During reassembly, inspect the housing for cracks, corrosion, and deformation.
+The housing mating surfaces must be clean and free from old gasket material.
+
+The X200 pump housing bolts must be tightened to 45 newton-metres.
+
+Tighten the housing bolts gradually using a diagonal sequence. Do not tighten
+one bolt completely before tightening the remaining bolts.
+
+3. LUBRICATION
+
+Inspect the bearing lubrication every 500 operating hours.
+
+Use ISO VG 68 industrial lubricant under normal operating conditions.
+
+Do not mix different lubricant types because incompatible lubricants may reduce
+bearing life.
+
+4. TROUBLESHOOTING
+
+If the pump produces excessive vibration, inspect the shaft alignment, mounting
+bolts, bearings, and impeller.
+
+Low flow may be caused by an obstructed inlet, an incorrectly rotating motor,
+a worn impeller, or air entering the suction line.
+
+If leakage appears around the shaft, inspect the mechanical seal for damage or
+incorrect installation.
+
+5. SAFETY
+
+Wear eye protection and suitable gloves while servicing the pump.
+
+Never operate the pump without the protective coupling guard installed.
+
+Do not perform maintenance while the pump is connected to electrical power.

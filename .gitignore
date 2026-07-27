@@ -1,0 +1,28 @@
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+myenv/
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Databases and vector stores
+chroma_db/
+chroma/
+*.sqlite3
+
+# IDE and OS
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Logs and temporary files
+*.log
+tmp/
