@@ -42,3 +42,6 @@ Microsoft/
 # Logs and temporary files
 *.log
 tmp/
+
+# Local packaging archives
+*.zip
