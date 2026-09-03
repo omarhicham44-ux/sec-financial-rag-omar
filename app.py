@@ -34,7 +34,12 @@ st.markdown(
     <style>
         /* Main page */
         .stApp {
-            background: var(--background-color);
+            background:
+                radial-gradient(
+                    circle at 72% -12%,
+                    rgba(20, 184, 166, 0.10),
+                    transparent 30%
+                );
         }
 
         /* Reduce empty space above the page */
@@ -46,12 +51,55 @@ st.markdown(
 
         /* Hero section */
         .hero-container {
-            padding: 0.5rem 0 1.35rem;
-            margin-bottom: 0.75rem;
+            position: relative;
+            overflow: hidden;
+            padding: 1.45rem 1.55rem 1.3rem;
+            margin-bottom: 1rem;
+            border: 1px solid rgba(128, 128, 128, 0.16);
+            border-radius: 18px;
+            background: rgba(128, 128, 128, 0.035);
+        }
+
+        .hero-container::before {
+            content: "";
+            position: absolute;
+            inset: 0 0 auto 0;
+            height: 2px;
+            background: linear-gradient(
+                90deg,
+                #14b8a6,
+                #38bdf8,
+                transparent 72%
+            );
+        }
+
+        .hero-identity {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .ai-mark,
+        .welcome-avatar,
+        .sidebar-logo {
+            display: grid;
+            place-items: center;
+            color: white;
+            background: linear-gradient(135deg, #14b8a6, #2563eb);
+            box-shadow: 0 8px 24px rgba(20, 184, 166, 0.18);
+            font-weight: 800;
+        }
+
+        .ai-mark {
+            width: 46px;
+            height: 46px;
+            border-radius: 14px;
+            flex: 0 0 46px;
+            font-size: 0.82rem;
         }
 
         .hero-title {
-            font-size: clamp(2rem, 4vw, 2.8rem);
+            font-size: clamp(1.85rem, 4vw, 2.5rem);
             font-weight: 720;
             letter-spacing: -0.035em;
             line-height: 1.08;
@@ -63,6 +111,26 @@ st.markdown(
             max-width: 680px;
             opacity: 0.72;
             line-height: 1.55;
+        }
+
+        .hero-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.55rem 1.1rem;
+            margin: 1rem 0 0 3.9rem;
+            color: rgba(128, 128, 128, 0.92);
+            font-size: 0.78rem;
+            font-weight: 600;
+        }
+
+        .hero-meta span::before {
+            content: "";
+            display: inline-block;
+            width: 5px;
+            height: 5px;
+            margin: 0 0.45rem 0.08rem 0;
+            border-radius: 999px;
+            background: #14b8a6;
         }
 
         .eyebrow,
@@ -134,15 +202,23 @@ st.markdown(
 
         /* Empty state */
         .empty-state {
-            text-align: center;
-            text-align: left;
-            padding: 1.6rem 0 1rem;
-            max-width: 620px;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.9rem;
+            padding: 1rem 1.05rem;
+            max-width: 680px;
+            margin-top: 1.25rem;
+            border: 1px solid rgba(128, 128, 128, 0.13);
+            border-radius: 16px;
+            background: rgba(128, 128, 128, 0.035);
         }
 
-        .empty-state-icon {
-            font-size: 2rem;
-            margin-bottom: 0.75rem;
+        .welcome-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 11px;
+            flex: 0 0 34px;
+            font-size: 0.65rem;
         }
 
         .empty-state-title,
@@ -153,8 +229,8 @@ st.markdown(
         }
 
         .empty-state-title {
-            font-size: 1.15rem;
-            margin-bottom: 0.35rem;
+            font-size: 1rem;
+            margin-bottom: 0.25rem;
         }
 
         .empty-state-copy {
@@ -169,32 +245,117 @@ st.markdown(
 
         .sidebar-brand {
             font-size: 1.15rem;
-            margin-bottom: 0.3rem;
+            margin: 0;
         }
 
-        .sidebar-stat {
-            font-size: 0.84rem;
-            opacity: 0.7;
-            line-height: 1.8;
-            margin: 1rem 0;
+        .sidebar-brand-row {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            margin-bottom: 0.35rem;
+        }
+
+        .sidebar-logo {
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            font-size: 0.62rem;
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 7px;
+            height: 7px;
+            margin-right: 0.38rem;
+            border-radius: 999px;
+            background: #22c55e;
+            box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.12);
+        }
+
+        .sidebar-card {
+            margin: 1rem 0 0.85rem;
+            padding: 0.9rem;
+            border: 1px solid rgba(128, 128, 128, 0.15);
+            border-radius: 14px;
+            background: rgba(128, 128, 128, 0.04);
+        }
+
+        .sidebar-card-label {
+            margin-bottom: 0.75rem;
+            color: rgba(128, 128, 128, 0.9);
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .sidebar-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.55rem;
+        }
+
+        .sidebar-stat-value {
+            font-size: 1.15rem;
+            font-weight: 750;
+        }
+
+        .sidebar-stat-name {
+            font-size: 0.72rem;
+            opacity: 0.62;
         }
 
         /* Make buttons more rounded */
         .stButton > button {
             border-radius: 10px;
+            transition: border-color 0.18s ease, transform 0.18s ease;
+        }
+
+        .stButton > button:hover {
+            border-color: rgba(20, 184, 166, 0.65);
+            transform: translateY(-1px);
         }
 
         /* Chat message styling */
         [data-testid="stChatMessage"] {
-            border: 0;
-            background: transparent;
-            padding: 0;
+            border: 1px solid rgba(128, 128, 128, 0.11);
+            border-radius: 16px;
+            background: rgba(128, 128, 128, 0.025);
+            padding: 0.75rem 0.9rem;
             margin-bottom: 1rem;
         }
 
+        [data-testid="stChatInput"] {
+            border-color: rgba(20, 184, 166, 0.25);
+        }
+
+        [data-testid="stExpander"] {
+            border-color: rgba(128, 128, 128, 0.12);
+            border-radius: 12px;
+        }
+
+        @media (max-width: 720px) {
+            .block-container {
+                padding-top: 1.5rem;
+            }
+
+            .hero-container {
+                padding: 1.1rem;
+            }
+
+            .hero-meta {
+                margin-left: 0;
+            }
+
+            .ai-mark {
+                display: none;
+            }
+        }
+
         /* Keep screenshots free from Streamlit development chrome */
-        [data-testid="stToolbar"],
         [data-testid="stStatusWidget"],
+        [data-testid="stAppDeployButton"],
+        [data-testid="stMainMenuButton"],
         footer {
             display: none;
         }
@@ -738,26 +899,53 @@ chunk_count = get_database_chunk_count()
 
 with st.sidebar:
     st.markdown(
-        '<div class="sidebar-brand">Filing Intelligence</div>',
+        """<div class="sidebar-brand-row">
+    <div class="sidebar-logo">FI</div>
+    <div>
+        <div class="sidebar-brand">Filing Intelligence</div>
+        <div class="empty-state-copy"><span class="status-dot"></span>AI assistant ready</div>
+    </div>
+</div>""",
         unsafe_allow_html=True,
     )
 
     st.caption(
-        "Grounded research across indexed SEC Form 10-K filings."
+        "Research company disclosures with evidence you can inspect."
     )
 
     st.markdown(
-        f"""
-        <div class="sidebar-stat">
-            191 filings &nbsp;·&nbsp; {chunk_count:,} indexed chunks<br>
-            Semantic search &nbsp;·&nbsp; Grounded answers
+        f"""<div class="sidebar-card">
+    <div class="sidebar-card-label">Knowledge base</div>
+    <div class="sidebar-stats">
+        <div>
+            <div class="sidebar-stat-value">191</div>
+            <div class="sidebar-stat-name">SEC filings</div>
         </div>
-        """,
+        <div>
+            <div class="sidebar-stat-value">{chunk_count:,}</div>
+            <div class="sidebar-stat-name">Indexed chunks</div>
+        </div>
+    </div>
+</div>""",
         unsafe_allow_html=True,
     )
 
+    with st.expander(
+        "How the assistant works",
+        expanded=False,
+    ):
+        st.markdown(
+            """
+            1. Understands your question
+            2. Finds relevant filing evidence
+            3. Grades each source
+            4. Calculates financial insights when needed
+            5. Answers with traceable sources
+            """
+        )
+
     if st.button(
-        "New conversation",
+        "＋ New conversation",
         use_container_width=True,
         type="primary",
     ):
@@ -775,9 +963,19 @@ with st.sidebar:
 
 st.markdown(
     """<div class="hero-container">
-    <div class="eyebrow">SEC research workspace</div>
-    <div class="hero-title">Filing Intelligence</div>
-    <div class="hero-subtitle">Ask about company disclosures and financial performance. Every answer stays connected to its filing evidence.</div>
+    <div class="hero-identity">
+        <div class="ai-mark">FI</div>
+        <div>
+            <div class="eyebrow"><span class="status-dot"></span>AI research assistant</div>
+            <div class="hero-title">Ask the filing. See the evidence.</div>
+            <div class="hero-subtitle">Explore company disclosures, risks, and financial performance through grounded answers and deterministic analysis.</div>
+        </div>
+    </div>
+    <div class="hero-meta">
+        <span>Semantic retrieval</span>
+        <span>Evidence grading</span>
+        <span>Financial reasoning</span>
+    </div>
 </div>""",
     unsafe_allow_html=True,
 )
@@ -825,18 +1023,36 @@ for column, suggestion in zip(
 
 
 # -------------------------------------------------------------------
+# QUESTION INPUT
+# -------------------------------------------------------------------
+
+typed_question = st.chat_input(
+    "Ask about a company, filing section, risk, or disclosure..."
+)
+
+selected_question = st.session_state.selected_question
+
+user_message = (
+    selected_question
+    if selected_question
+    else typed_question
+)
+
+
+# -------------------------------------------------------------------
 # EMPTY CHAT STATE
 # -------------------------------------------------------------------
 
-if not st.session_state.messages:
+if not st.session_state.messages and not user_message:
     st.markdown(
-        """
-        <div class="empty-state">
-            <div class="empty-state-icon">🔍</div>
-            <div class="empty-state-title">Start with a company or filing topic</div>
+        """<div class="empty-state">
+            <div class="welcome-avatar">AI</div>
+            <div>
+            <div class="empty-state-title">What would you like to investigate?</div>
             <div class="empty-state-copy">
-                Ask about business, risks, management discussion,
-                legal proceedings, governance, or financial performance.
+                Choose a prompt above or ask about a company, filing section,
+                reported risk, or financial trend.
+            </div>
             </div>
         </div>
         """,
@@ -872,22 +1088,6 @@ for message in st.session_state.messages:
                 )
             )
 
-
-# -------------------------------------------------------------------
-# QUESTION INPUT
-# -------------------------------------------------------------------
-
-typed_question = st.chat_input(
-    "Ask about a company, filing section, risk, or disclosure..."
-)
-
-selected_question = st.session_state.selected_question
-
-user_message = (
-    selected_question
-    if selected_question
-    else typed_question
-)
 
 if user_message:
     # Clear the suggested question after reading it.
