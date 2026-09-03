@@ -1,3 +1,5 @@
+import re
+from html import escape
 from typing import Any
 
 import streamlit as st
@@ -32,58 +34,52 @@ st.markdown(
     <style>
         /* Main page */
         .stApp {
-            background:
-                radial-gradient(
-                    circle at top left,
-                    rgba(49, 51, 63, 0.10),
-                    transparent 32%
-                );
+            background: var(--background-color);
         }
 
         /* Reduce empty space above the page */
         .block-container {
-            padding-top: 2rem;
+            padding-top: 2.5rem;
             padding-bottom: 6rem;
-            max-width: 1200px;
+            max-width: 1080px;
         }
 
         /* Hero section */
         .hero-container {
-            padding: 1.5rem 1.7rem;
-            border: 1px solid rgba(128, 128, 128, 0.20);
-            border-radius: 22px;
-            margin-bottom: 1.5rem;
-            background: rgba(255, 255, 255, 0.03);
+            padding: 0.5rem 0 1.35rem;
+            margin-bottom: 0.75rem;
         }
 
         .hero-title {
-            font-size: 2.25rem;
-            font-weight: 750;
-            margin-bottom: 0.25rem;
+            font-size: clamp(2rem, 4vw, 2.8rem);
+            font-weight: 720;
+            letter-spacing: -0.035em;
+            line-height: 1.08;
+            margin-bottom: 0.55rem;
         }
 
         .hero-subtitle {
             font-size: 1rem;
-            opacity: 0.78;
-            line-height: 1.6;
+            max-width: 680px;
+            opacity: 0.72;
+            line-height: 1.55;
         }
 
-        /* Status pills */
-        .status-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            margin-top: 1rem;
+        .eyebrow,
+        .section-label {
+            color: #14b8a6;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.09em;
+            text-transform: uppercase;
         }
 
-        .status-pill {
-            display: inline-block;
-            border-radius: 999px;
-            padding: 0.35rem 0.75rem;
-            font-size: 0.83rem;
-            font-weight: 600;
-            border: 1px solid rgba(128, 128, 128, 0.25);
-            background: rgba(128, 128, 128, 0.08);
+        .eyebrow {
+            margin-bottom: 0.7rem;
+        }
+
+        .section-label {
+            margin: 1.15rem 0 0.65rem;
         }
 
         /* Route badges */
@@ -93,7 +89,7 @@ st.markdown(
             border-radius: 999px;
             font-size: 0.78rem;
             font-weight: 700;
-            margin-top: 0.5rem;
+            margin: 0.25rem 0 0.5rem;
         }
 
         .route-retrieve {
@@ -121,11 +117,9 @@ st.markdown(
 
         /* Source cards */
         .source-card {
-            border-left: 4px solid #14b8a6;
-            border-radius: 8px;
-            padding: 0.75rem 1rem;
-            margin: 0.65rem 0;
-            background: rgba(128, 128, 128, 0.07);
+            border-left: 2px solid #14b8a6;
+            padding: 0.35rem 0 0.35rem 0.85rem;
+            margin: 0.7rem 0;
         }
 
         .source-company {
@@ -141,40 +135,68 @@ st.markdown(
         /* Empty state */
         .empty-state {
             text-align: center;
-            padding: 2.3rem 1rem 1.5rem 1rem;
-            opacity: 0.88;
+            text-align: left;
+            padding: 1.6rem 0 1rem;
+            max-width: 620px;
         }
 
         .empty-state-icon {
-            font-size: 3.4rem;
-            margin-bottom: 0.6rem;
+            font-size: 2rem;
+            margin-bottom: 0.75rem;
         }
 
-        /* Sidebar cards */
-        .sidebar-card {
-            padding: 0.9rem;
-            border-radius: 14px;
-            border: 1px solid rgba(128, 128, 128, 0.20);
-            background: rgba(128, 128, 128, 0.06);
-            margin-bottom: 0.75rem;
+        .empty-state-title,
+        .company-name,
+        .sidebar-brand {
+            font-weight: 700;
+            letter-spacing: -0.015em;
+        }
+
+        .empty-state-title {
+            font-size: 1.15rem;
+            margin-bottom: 0.35rem;
+        }
+
+        .empty-state-copy {
+            opacity: 0.68;
+            line-height: 1.55;
+        }
+
+        .company-name {
+            font-size: 1.25rem;
+            margin-top: 0.6rem;
+        }
+
+        .sidebar-brand {
+            font-size: 1.15rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .sidebar-stat {
+            font-size: 0.84rem;
+            opacity: 0.7;
+            line-height: 1.8;
+            margin: 1rem 0;
         }
 
         /* Make buttons more rounded */
         .stButton > button {
-            border-radius: 12px;
+            border-radius: 10px;
         }
 
         /* Chat message styling */
         [data-testid="stChatMessage"] {
-            border: 1px solid rgba(128, 128, 128, 0.12);
-            border-radius: 16px;
-            padding: 0.4rem;
-            margin-bottom: 0.7rem;
+            border: 0;
+            background: transparent;
+            padding: 0;
+            margin-bottom: 1rem;
         }
 
-        /* Hide Streamlit default footer */
+        /* Keep screenshots free from Streamlit development chrome */
+        [data-testid="stToolbar"],
+        [data-testid="stStatusWidget"],
         footer {
-            visibility: hidden;
+            display: none;
         }
     </style>
     """,
@@ -211,6 +233,33 @@ def get_database_chunk_count() -> int:
 
     except Exception:
         return 0
+
+
+def display_section_label(label: str) -> None:
+    """Render a compact section label without a large heading."""
+
+    st.markdown(
+        f'<div class="section-label">{label}</div>',
+        unsafe_allow_html=True,
+    )
+
+
+def clean_answer_markdown(answer: Any) -> str:
+    """Normalize oversized model headings for a calmer chat layout."""
+
+    cleaned = str(answer)
+    cleaned = re.sub(
+        r"</?h[1-6][^>]*>",
+        "",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
+    cleaned = re.sub(
+        r"(?m)^\s{0,3}#{1,6}\s+(.+?)\s*$",
+        r"**\1**",
+        cleaned,
+    )
+    return cleaned.strip()
 
 
 def get_route_label(route: str) -> str:
@@ -499,7 +548,7 @@ def _display_financial_charts(company_analysis: dict[str, Any]) -> None:
 def _display_analysis_lists(company_analysis: dict[str, Any]) -> None:
     left, right = st.columns(2)
     with left:
-        st.markdown("#### Strengths")
+        display_section_label("Strengths")
         strengths = company_analysis.get("strengths", [])
         if strengths:
             for item in strengths:
@@ -507,7 +556,7 @@ def _display_analysis_lists(company_analysis: dict[str, Any]) -> None:
         else:
             st.caption("No strengths were identified from the available calculations.")
     with right:
-        st.markdown("#### Weaknesses")
+        display_section_label("Weaknesses")
         weaknesses = company_analysis.get("weaknesses", [])
         if weaknesses:
             for item in weaknesses:
@@ -517,7 +566,7 @@ def _display_analysis_lists(company_analysis: dict[str, Any]) -> None:
 
     warnings = company_analysis.get("warnings", [])
     if warnings:
-        st.markdown("#### Warnings")
+        display_section_label("Warnings")
         for item in warnings:
             st.warning(item)
 
@@ -568,7 +617,14 @@ def display_financial_analysis(
 
                 top_left, top_right = st.columns([3, 1])
                 with top_left:
-                    st.markdown(f"### {company.get('company', 'Company')}")
+                    st.markdown(
+                        (
+                            '<div class="company-name">'
+                            f"{escape(str(company.get('company', 'Company')))}"
+                            "</div>"
+                        ),
+                        unsafe_allow_html=True,
+                    )
                     if years:
                         st.caption(f"Fiscal years analyzed: {', '.join(str(year) for year in years)}")
                     st.write(company.get("reasoning_summary", ""))
@@ -576,13 +632,12 @@ def display_financial_analysis(
                     st.metric("Confidence", level, f"{float(score) * 100:.0f}% score" if isinstance(score, (int, float)) else None)
 
                 _display_kpis(company)
-                st.divider()
                 _display_financial_charts(company)
                 _display_analysis_lists(company)
 
                 trends = company.get("trends", [])
                 if trends:
-                    st.markdown("#### Multi-year trends")
+                    display_section_label("Multi-year trends")
                     for trend in trends:
                         st.markdown(
                             f"- **{_friendly_name(str(trend.get('metric', 'Metric')))}:** "
@@ -595,7 +650,7 @@ def display_financial_analysis(
 
         global_warnings = financial_analysis.get("warnings", [])
         if global_warnings:
-            st.markdown("#### Extraction notes")
+            display_section_label("Extraction notes")
             for item in global_warnings:
                 st.warning(item)
 
@@ -637,22 +692,22 @@ def display_assistant_message(
         "not_requested",
     )
 
-    st.markdown(answer)
-    display_route_badge(route)
+    st.markdown(clean_answer_markdown(answer))
     display_financial_analysis(
         financial_analysis=financial_analysis,
         status=financial_analysis_status,
     )
 
     with st.expander(
-        "View response details",
+        "Sources & details",
         expanded=False,
     ):
-        st.markdown("#### Routing decision")
+        display_route_badge(route)
+        display_section_label("Routing decision")
         st.write(route_reason)
 
         if route == "retrieve":
-            st.markdown("#### Document sources")
+            display_section_label("Document sources")
             display_sources(retrieved_chunks)
 
 
@@ -682,50 +737,35 @@ def submit_suggested_question(
 chunk_count = get_database_chunk_count()
 
 with st.sidebar:
-    st.markdown("## 📊 Filing Intelligence")
+    st.markdown(
+        '<div class="sidebar-brand">Filing Intelligence</div>',
+        unsafe_allow_html=True,
+    )
 
     st.caption(
-        "AI-powered exploration of indexed SEC Form 10-K filings."
+        "Grounded research across indexed SEC Form 10-K filings."
     )
 
     st.markdown(
         f"""
-        <div class="sidebar-card">
-            <strong>Knowledge base</strong><br><br>
-            📁 191 SEC filings<br>
-            🧩 {chunk_count:,} indexed chunks<br>
-            🗄️ ChromaDB vector store
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    st.markdown(
-        """
-        <div class="sidebar-card">
-            <strong>How it works</strong><br><br>
-            1. Classifies your question<br>
-            2. Searches relevant filings<br>
-            3. Grades retrieved evidence<br>
-            4. Produces a grounded answer
+        <div class="sidebar-stat">
+            191 filings &nbsp;·&nbsp; {chunk_count:,} indexed chunks<br>
+            Semantic search &nbsp;·&nbsp; Grounded answers
         </div>
         """,
         unsafe_allow_html=True,
     )
 
     if st.button(
-        "＋ New chat",
+        "New conversation",
         use_container_width=True,
         type="primary",
     ):
         clear_chat()
         st.rerun()
 
-    st.divider()
-
     st.caption(
-        "This tool analyzes historical filing disclosures. "
-        "It does not provide personalized investment advice."
+        "Historical filing research only—not investment advice."
     )
 
 
@@ -734,25 +774,11 @@ with st.sidebar:
 # -------------------------------------------------------------------
 
 st.markdown(
-    """
-    <div class="hero-container">
-        <div class="hero-title">
-            📈 SEC Filing Intelligence Assistant
-        </div>
-
-        <div class="hero-subtitle">
-            Search, explore, and understand company disclosures from
-            indexed Form 10-K annual reports.
-        </div>
-
-        <div class="status-row">
-            <span class="status-pill">✅ Dataset indexed</span>
-            <span class="status-pill">🔎 Semantic retrieval</span>
-            <span class="status-pill">🧠 Relevance grading</span>
-            <span class="status-pill">📚 Source-grounded answers</span>
-        </div>
-    </div>
-    """,
+    """<div class="hero-container">
+    <div class="eyebrow">SEC research workspace</div>
+    <div class="hero-title">Filing Intelligence</div>
+    <div class="hero-subtitle">Ask about company disclosures and financial performance. Every answer stays connected to its filing evidence.</div>
+</div>""",
     unsafe_allow_html=True,
 )
 
@@ -761,25 +787,25 @@ st.markdown(
 # SUGGESTED QUESTIONS
 # -------------------------------------------------------------------
 
-st.markdown("### Try a question")
+display_section_label("Suggested questions")
 
 suggestion_columns = st.columns(4)
 
 suggestions = [
     (
-        "🏢 ANSYS",
+        "ANSYS",
         "What does ANSYS do?",
     ),
     (
-        "⚠️ Salesforce risks",
+        "Salesforce risks",
         "What risk factors did Salesforce report?",
     ),
     (
-        "₿ Riot Blockchain",
+        "Riot Blockchain",
         "Describe Riot Blockchain's business.",
     ),
     (
-        "📄 Form 10-K",
+        "What is a 10-K?",
         "What is a Form 10-K?",
     ),
 ]
@@ -807,14 +833,11 @@ if not st.session_state.messages:
         """
         <div class="empty-state">
             <div class="empty-state-icon">🔍</div>
-
-            <h3>Explore the filing knowledge base</h3>
-
-            <p>
-                Ask about a company's business, reported risks,
-                management discussion, legal proceedings, governance,
-                or other information contained in its indexed filing.
-            </p>
+            <div class="empty-state-title">Start with a company or filing topic</div>
+            <div class="empty-state-copy">
+                Ask about business, risks, management discussion,
+                legal proceedings, governance, or financial performance.
+            </div>
         </div>
         """,
         unsafe_allow_html=True,
