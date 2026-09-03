@@ -2,6 +2,11 @@ from typing import Any
 
 import streamlit as st
 
+try:
+    import plotly.graph_objects as go
+except ImportError:
+    go = None
+
 from graph import graph
 from vector_store import get_collection
 
@@ -335,6 +340,266 @@ def display_sources(
         )
 
 
+RATIO_LABELS = {
+    "revenue_growth": "Revenue growth",
+    "gross_margin": "Gross margin",
+    "operating_margin": "Operating margin",
+    "net_profit_margin": "Net profit margin",
+    "free_cash_flow_margin": "Free cash flow margin",
+    "operating_cash_flow_quality": "Cash flow quality",
+    "liability_pressure": "Liability pressure",
+    "equity_position": "Equity position",
+    "research_and_development_intensity": "R&D intensity",
+    "sales_and_marketing_intensity": "Sales & marketing intensity",
+}
+
+METRIC_LABELS = {
+    "revenue": "Revenue",
+    "gross_profit": "Gross profit",
+    "operating_income": "Operating income",
+    "net_income": "Net income",
+    "operating_cash_flow": "Operating cash flow",
+    "free_cash_flow": "Free cash flow",
+    "cash_and_cash_equivalents": "Cash and equivalents",
+    "total_assets": "Total assets",
+    "total_liabilities": "Total liabilities",
+    "stockholders_equity": "Stockholders' equity",
+    "research_and_development": "R&D",
+    "sales_and_marketing": "Sales & marketing",
+    "earnings_per_share": "Earnings per share",
+}
+
+
+def _friendly_name(name: str) -> str:
+    return RATIO_LABELS.get(name, METRIC_LABELS.get(name, name.replace("_", " ").title()))
+
+
+def _format_ratio(value: Any, display_unit: str) -> str:
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        return "Unavailable"
+    if display_unit == "percent":
+        return f"{value * 100:.1f}%"
+    return f"{value:.2f}x"
+
+
+def _format_metric_value(record: dict[str, Any]) -> str:
+    value = record.get("value")
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        return "Unavailable"
+    currency = str(record.get("currency", "")).strip()
+    unit = str(record.get("unit", "")).strip()
+    formatted = f"{value:,.2f}"
+    pieces = [piece for piece in (currency, formatted, unit) if piece and piece.lower() != "unknown"]
+    return " ".join(pieces) or formatted
+
+
+def _latest_ratios(company_analysis: dict[str, Any]) -> list[dict[str, Any]]:
+    ratios = [item for item in company_analysis.get("calculated_ratios", []) if isinstance(item, dict)]
+    latest: dict[str, dict[str, Any]] = {}
+    for ratio in ratios:
+        name = str(ratio.get("name", ""))
+        year = ratio.get("fiscal_year")
+        if not name or not isinstance(year, int):
+            continue
+        previous = latest.get(name)
+        if previous is None or year > previous.get("fiscal_year", -1):
+            latest[name] = ratio
+    preferred = [
+        "revenue_growth", "gross_margin", "operating_margin",
+        "net_profit_margin", "free_cash_flow_margin",
+        "operating_cash_flow_quality", "liability_pressure", "equity_position",
+    ]
+    return [latest[name] for name in preferred if name in latest]
+
+
+def _display_kpis(company_analysis: dict[str, Any]) -> None:
+    ratios = _latest_ratios(company_analysis)
+    if not ratios:
+        st.info("No supported ratios were available for KPI cards.")
+        return
+    for start in range(0, len(ratios), 4):
+        row = ratios[start:start + 4]
+        columns = st.columns(len(row))
+        for column, ratio in zip(columns, row):
+            with column:
+                year = ratio.get("fiscal_year", "")
+                st.metric(
+                    f"{_friendly_name(str(ratio.get('name', 'Metric')))} · {year}",
+                    _format_ratio(ratio.get("value"), str(ratio.get("display_unit", "percent"))),
+                )
+
+
+def _display_financial_charts(company_analysis: dict[str, Any]) -> None:
+    if go is None:
+        st.info("Install Plotly to display interactive financial charts: pip install plotly")
+        return
+
+    ratios = [item for item in company_analysis.get("calculated_ratios", []) if isinstance(item, dict)]
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for ratio in ratios:
+        grouped.setdefault(str(ratio.get("name", "unknown")), []).append(ratio)
+
+    margin_names = [
+        "gross_margin", "operating_margin", "net_profit_margin",
+        "free_cash_flow_margin", "research_and_development_intensity",
+        "sales_and_marketing_intensity",
+    ]
+    margin_figure = go.Figure()
+    margin_series = 0
+    for name in margin_names:
+        points = sorted(grouped.get(name, []), key=lambda item: item.get("fiscal_year", 0))
+        if not points:
+            continue
+        margin_figure.add_trace(go.Scatter(
+            x=[item.get("fiscal_year") for item in points],
+            y=[item.get("value", 0) * 100 for item in points],
+            mode="lines+markers",
+            name=_friendly_name(name),
+        ))
+        margin_series += 1
+    if margin_series:
+        margin_figure.update_layout(
+            title="Margins and operating intensity",
+            xaxis_title="Fiscal year",
+            yaxis_title="Percent",
+            legend_title="Metric",
+            hovermode="x unified",
+        )
+        st.plotly_chart(margin_figure, use_container_width=True)
+
+    supporting = [item for item in company_analysis.get("supporting_metric_records", []) if isinstance(item, dict)]
+    metric_names = ["revenue", "net_income", "operating_cash_flow", "free_cash_flow"]
+    metric_figure = go.Figure()
+    metric_series = 0
+    for name in metric_names:
+        points = sorted(
+            [item for item in supporting if item.get("metric") == name],
+            key=lambda item: item.get("fiscal_year", 0),
+        )
+        if not points:
+            continue
+        metric_figure.add_trace(go.Bar(
+            x=[item.get("fiscal_year") for item in points],
+            y=[item.get("value") for item in points],
+            name=_friendly_name(name),
+        ))
+        metric_series += 1
+    if metric_series:
+        unit = next((str(item.get("unit")) for item in supporting if item.get("unit") not in (None, "", "unknown")), "reported units")
+        metric_figure.update_layout(
+            title="Reported financial metrics",
+            xaxis_title="Fiscal year",
+            yaxis_title=unit.title(),
+            barmode="group",
+            legend_title="Metric",
+        )
+        st.plotly_chart(metric_figure, use_container_width=True)
+
+
+def _display_analysis_lists(company_analysis: dict[str, Any]) -> None:
+    left, right = st.columns(2)
+    with left:
+        st.markdown("#### Strengths")
+        strengths = company_analysis.get("strengths", [])
+        if strengths:
+            for item in strengths:
+                st.markdown(f"- {item}")
+        else:
+            st.caption("No strengths were identified from the available calculations.")
+    with right:
+        st.markdown("#### Weaknesses")
+        weaknesses = company_analysis.get("weaknesses", [])
+        if weaknesses:
+            for item in weaknesses:
+                st.markdown(f"- {item}")
+        else:
+            st.caption("No weaknesses were identified from the available calculations.")
+
+    warnings = company_analysis.get("warnings", [])
+    if warnings:
+        st.markdown("#### Warnings")
+        for item in warnings:
+            st.warning(item)
+
+
+def _display_supporting_evidence(company_analysis: dict[str, Any]) -> None:
+    records = [item for item in company_analysis.get("supporting_metric_records", []) if isinstance(item, dict)]
+    if not records:
+        st.caption("No supporting metric records were available.")
+        return
+    rows = []
+    for item in sorted(records, key=lambda row: (row.get("fiscal_year", 0), str(row.get("metric", "")))):
+        references = item.get("source_documents", [])
+        rows.append({
+            "Metric": _friendly_name(str(item.get("metric", ""))),
+            "Fiscal year": item.get("fiscal_year"),
+            "Value": _format_metric_value(item),
+            "Source documents": ", ".join(f"doc {ref}" for ref in references) or "Not provided",
+        })
+    st.dataframe(rows, use_container_width=True, hide_index=True)
+
+
+def display_financial_analysis(
+    financial_analysis: dict[str, Any],
+    status: str,
+) -> None:
+    if status == "failed":
+        st.warning("Financial analysis failed, so the response used the normal grounded RAG path.")
+        return
+    if status == "insufficient_data":
+        st.info("The retrieved evidence was not sufficient for supported financial calculations.")
+        return
+    if status != "success" or not financial_analysis:
+        return
+
+    companies = [item for item in financial_analysis.get("companies", []) if isinstance(item, dict)]
+    if not companies:
+        st.info("No company-level financial analysis was produced.")
+        return
+
+    with st.expander("📊 Financial analysis dashboard", expanded=True):
+        tabs = st.tabs([str(company.get("company", "Company")) for company in companies])
+        for tab, company in zip(tabs, companies):
+            with tab:
+                years = company.get("fiscal_years_used", [])
+                confidence = company.get("confidence", {}) or {}
+                score = confidence.get("score", 0)
+                level = str(confidence.get("level", "low")).title()
+
+                top_left, top_right = st.columns([3, 1])
+                with top_left:
+                    st.markdown(f"### {company.get('company', 'Company')}")
+                    if years:
+                        st.caption(f"Fiscal years analyzed: {', '.join(str(year) for year in years)}")
+                    st.write(company.get("reasoning_summary", ""))
+                with top_right:
+                    st.metric("Confidence", level, f"{float(score) * 100:.0f}% score" if isinstance(score, (int, float)) else None)
+
+                _display_kpis(company)
+                st.divider()
+                _display_financial_charts(company)
+                _display_analysis_lists(company)
+
+                trends = company.get("trends", [])
+                if trends:
+                    st.markdown("#### Multi-year trends")
+                    for trend in trends:
+                        st.markdown(
+                            f"- **{_friendly_name(str(trend.get('metric', 'Metric')))}:** "
+                            f"{str(trend.get('direction', 'unknown')).title()} — "
+                            f"{trend.get('interpretation', '')}"
+                        )
+
+                with st.expander("Supporting metric evidence", expanded=False):
+                    _display_supporting_evidence(company)
+
+        global_warnings = financial_analysis.get("warnings", [])
+        if global_warnings:
+            st.markdown("#### Extraction notes")
+            for item in global_warnings:
+                st.warning(item)
+
+
 def display_assistant_message(
     message: dict[str, Any],
 ) -> None:
@@ -362,8 +627,22 @@ def display_assistant_message(
         [],
     )
 
+    financial_analysis = message.get(
+        "financial_analysis",
+        {},
+    )
+
+    financial_analysis_status = message.get(
+        "financial_analysis_status",
+        "not_requested",
+    )
+
     st.markdown(answer)
     display_route_badge(route)
+    display_financial_analysis(
+        financial_analysis=financial_analysis,
+        status=financial_analysis_status,
+    )
 
     with st.expander(
         "View response details",
@@ -643,12 +922,32 @@ if user_message:
                     [],
                 )
 
+                financial_metrics = result.get(
+                    "financial_metrics",
+                    {},
+                )
+
+                financial_analysis = result.get(
+                    "financial_analysis",
+                    {},
+                )
+
+                financial_analysis_status = result.get(
+                    "financial_analysis_status",
+                    "not_requested",
+                )
+
                 assistant_record = {
                     "role": "assistant",
                     "content": final_answer,
                     "route": route,
                     "route_reason": route_reason,
                     "retrieved_chunks": retrieved_chunks,
+                    "financial_metrics": financial_metrics,
+                    "financial_analysis": financial_analysis,
+                    "financial_analysis_status": (
+                        financial_analysis_status
+                    ),
                 }
 
                 display_assistant_message(
