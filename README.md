@@ -11,6 +11,7 @@ Turn dense annual reports into source-grounded answers, calculated financial rat
 [![LangGraph](https://img.shields.io/badge/LangGraph-1.2-1C3C3C)](https://www.langchain.com/langgraph)
 [![ChromaDB](https://img.shields.io/badge/ChromaDB-1.5-F97316)](https://www.trychroma.com/)
 [![Tests](https://github.com/omarhicham44-ux/sec-financial-rag-omar/actions/workflows/tests.yml/badge.svg)](https://github.com/omarhicham44-ux/sec-financial-rag-omar/actions/workflows/tests.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 [Why it matters](#why-it-matters) · [Capabilities](#core-capabilities) · [Architecture](#system-architecture) · [Quick start](#quick-start) · [Testing](#testing)
 
@@ -345,6 +346,10 @@ Coverage includes router validation, all supported ratios, multi-year trends, mi
 ## Responsible use
 
 This project is an analytical and educational tool for historical filing research. It does not provide personalized investment advice. Verify material conclusions against the original SEC filing before making financial, legal, or compliance decisions.
+
+## License
+
+Released under the [MIT License](LICENSE). The bundled SEC filings are public documents from the U.S. Securities and Exchange Commission.
 
 ## Author
 
